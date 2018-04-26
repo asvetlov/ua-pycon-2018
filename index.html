@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ru" >
+  <head>
+    <title>The current state and future of asyncio</title>
+    <meta name="description" content="">
+    <meta name="author" content="Andrew Svetlov">
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+    <link rel="stylesheet" href="css/reveal.css">
+    <link rel="stylesheet" href="css/theme/custom.css" id="theme">
+
+    <!-- Code syntax highlighting -->
+    <link rel="stylesheet" href="lib/css/custom.css">
+
+    <!-- Printing and PDF exports -->
+    <script>
+     var link = document.createElement( 'link' );
+     link.rel = 'stylesheet';
+     link.type = 'text/css';
+     link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+     document.getElementsByTagName( 'head' )[0].appendChild( link );
+    </script>
+
+    <!--[if lt IE 9]>
+      <script src="lib/js/html5shiv.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <section>
+          <h2>The current state and future of asyncio</h2>
+          <p>
+            Andrew Svetlov
+            <p>
+              <small>@andrew_svetlov</small><br>
+              <small>andrew.svetlov@gmail.com</small><br>
+              <small>https://asvetlov.github.io/pycon-minsk-2018/</small>
+            </p>
+          </p>
+        </section>
+        <section>
+          <h2>Bio</h2>
+          <ul>
+            <li>Work on Ocean S.A.
+              (<a href="https://ocean.io/">https://ocean.io/</a>)</li>
+            <li>aio-libs, aiohttp etc.</li>
+            <li>Python Core Developer</li>
+          </ul>
+        </section>
+        <!-- ------------------------------------------ -->
+	<section>
+	  <section>
+	    <h1>asyncio</h1>
+	  </section>
+	  <section>
+	    <img src="Iceberg.jpg" width="40%" />
+	  </section>
+	  <section>
+	    <h2>Basic API</h2>
+	    <ul>
+	      <li>async/await</li>
+	      <li>create_task()</li>
+	      <li>gather()</li>
+	      <li>locks</li>
+	      <li>queues</li>
+	    </ul>
+	  </section>
+	  <section>
+	    <h2>Third parties</h2>
+	    <pre><code>
+  async def fetch(session, url):
+      async with session.get('http://python.org') as response:
+          return await response.text()
+	    </code></pre>
+	  </section>
+	  <section>
+	    <h2>asyncio is</h2>
+	    <p>A kind of <b>concurrent</b> programming</p>
+	    <p>asyncio <b>task</b> is a <b>lightweight thread</b></p>
+	    <p class="fragment">Utilize the knowledge of multithreaded approach</p>
+	    <p class="fragment">Use locks, events, queues etc</p>
+	    <p class="fragment"><del><b>No lowlevel futures</b></del></p>
+	  </section>
+	  <section>
+	    <h2>asyncio is not</h2>
+	    <img src="beluga.jpg" width="60%" />
+	    <p>A way to speed up Django app</p>
+	  </section>
+	  <section>
+	    <h2>Don't run asyncio from WSGI app</h2>
+	    <pre><code>
+def view(request):
+    loop = asyncio.get_event_loop()
+    tasks = [asyncio.create_task(fetch(url))
+             for url in urls]
+    loop.run_until_complete(asyncio.wait(tasks))
+	    </code></pre>
+	    <p>Don't mix sync and async code</p>
+	  </section>
+	  <section>
+	    <h2>Async entry point</h2>
+	    <pre><code>
+async def main():
+    await func()
+
+asyncio.run(main())
+	    </code></pre>
+	    <p class="fragment"><b>Obsolete</b>: <code>asyncio.run_forever()</code> / <code>asyncio.run_until_complete()</code></p>
+	  </section>
+	</section>
+	<section>
+	  No fire-and-forget
+	  Resource cleanup
+	</section>
+        <!-- ------------------------------------------ -->
+        <section>
+          <h1>Questions?</h1>
+          <p>
+            Andrew Svetlov
+	  </p>
+          <p>
+            <small>@andrew_svetlov</small><br>
+            <small>andrew.svetlov@gmail.com</small><br>
+            <small>http://asvetlov.github.io/pycon-minsk-2018/</small>
+          </p>
+        </section>
+      </div>
+    </div>
+
+    <script src="lib/js/head.min.js"></script>
+    <script src="js/reveal.js"></script>
+
+    <script>
+     // Full list of configuration options available at:
+     // https://github.com/hakimel/reveal.js#configuration
+     Reveal.initialize({
+       controls: true,
+       progress: true,
+       history: true,
+       center: true,
+       slideNumber: true,
+       transition: 'slide', // none/fade/slide/convex/concave/zoom
+       // Optional reveal.js plugins
+       dependencies: [
+         { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+         { src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+         { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+         { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+         { src: 'plugin/zoom-js/zoom.js', async: true },
+         { src: 'plugin/notes/notes.js', async: true }
+       ]
+     });
+    </script>
+
+  </body>
+</html>
