@@ -39,7 +39,7 @@
             <p>
               <small>@andrew_svetlov</small><br>
               <small>andrew.svetlov@gmail.com</small><br>
-              <small>https://asvetlov.github.io/pycon-minsk-2018/</small>
+              <small>https://asvetlov.github.io/ua-pycon-2018/</small>
             </p>
           </p>
         </section>
@@ -56,9 +56,12 @@
 	<section>
 	  <section>
 	    <h1>asyncio</h1>
+	    <img src="Iceberg.jpg" width="40%" />
 	  </section>
 	  <section>
-	    <img src="Iceberg.jpg" width="40%" />
+	    <h2>Why?</h2>
+	    <p class="fragment">Microservices</p>
+	    <p class="fragment">Websockets</p>
 	  </section>
 	  <section>
 	    <h2>Basic API</h2>
@@ -110,12 +113,231 @@ async def main():
 
 asyncio.run(main())
 	    </code></pre>
-	    <p class="fragment"><b>Obsolete</b>: <code>asyncio.run_forever()</code> / <code>asyncio.run_until_complete()</code></p>
+	  </section>
+	  <section>
+	    <h2>No run_forever() / run_until_complete()</h2>
+	    <pre><small><small><code>
+def run(main, *, debug=False):
+    if events._get_running_loop() is not None:
+        raise RuntimeError(
+            "asyncio.run() cannot be called from a running event loop")
+
+    if not coroutines.iscoroutine(main):
+        raise ValueError("a coroutine was expected, got {!r}".format(main))
+
+    loop = events.new_event_loop()
+    try:
+        events.set_event_loop(loop)
+        loop.set_debug(debug)
+        return loop.run_until_complete(main)
+    finally:
+        try:
+            _cancel_all_tasks(loop)
+            loop.run_until_complete(loop.shutdown_asyncgens())
+        finally:
+            events.set_event_loop(None)
+            loop.close()
+
+
+def _cancel_all_tasks(loop):
+    to_cancel = [task for task in tasks.all_tasks(loop)
+                 if not task.done()]
+    if not to_cancel:
+        return
+
+    for task in to_cancel:
+        task.cancel()
+
+    loop.run_until_complete(
+        tasks.gather(*to_cancel, loop=loop, return_exceptions=True))
+
+    for task in to_cancel:
+        if task.cancelled():
+            continue
+        if task.exception() is not None:
+            loop.call_exception_handler({
+                'message': 'unhandled exception during asyncio.run() shutdown',
+                'exception': task.exception(),
+                'task': task,
+            })
+	    </code></small></small></pre>
 	  </section>
 	</section>
 	<section>
-	  No fire-and-forget
-	  Resource cleanup
+	  <section>
+	    <h1>Common mistakes</h1>
+	  </section>
+	  <section>
+	    <img src="explosion.png" width="100%" />
+	  </section>
+	</section>
+	<section>
+	  <section>
+	    <h2>Fire-and-forget</h2>
+	    <pre><code>
+async def process(url):
+    ...
+
+async def process_all():
+    for url in urls:
+        asyncio.create_task(process(url))
+	    </code></pre>
+	  </section>
+	  <section>
+	    <h2>Problems</h2>
+	    <ul>
+	      <li>Errors are not handled</li>
+	      <li>Amount of spawned task is not controlled</li>
+	      <li>Graceful shutdown is impossible</li>
+	    </ul>
+	  </section>
+	</section>
+	<section>
+	  <section>
+	    <h2>IO in constructor</h2>
+	    <pre><code>
+class A:
+    def __init__(self):
+        self.data = fetch(url)
+	    </code></pre>
+	  </section>
+	  <section>
+	    <h2>Solution: Factory method</h2>
+	    <pre><code>
+class A:
+    def __init__(self):
+        self.data = None
+
+    @classmethod
+    async def create(cls):
+        self = cls()
+        self.data = fetch(url)
+
+a = await A.create()
+	    </code></pre>
+	  </section>
+	</section>
+	<section>
+	  <section>
+	    <h2>Resource cleanup</h2>
+	    <pre><code>
+async def fetch(db):
+    cursor = await db.execute("SELECT * from tbl")
+    ret = []
+    async for rec in cursor:
+        ret.append(rec)
+    return ret
+	    </code></pre>
+	  </section>
+	  <section>
+	    <h2>Finalizers</h2>
+	    <ul>
+	      <li><del><code>__del__</code></del></li>
+	      <li><code>await obj.close()</code></li>
+	      <li><code>async with obj: ...</code></li>
+	    </ul>
+	  </section>
+	</section>
+	<section>
+	  <section>
+	    <h2>Task Cancellation: Naive approach</h2>
+	    <pre><code>
+async def handler(request):
+    await request.config['db'].execute("UPDATE ...")
+    return web.Response(text="OK")
+	    </code></pre>
+	  </section>
+	  <section>
+	    <h2>Shielded execution</h2>
+	    <pre><code>
+async def handler(request):
+    await asyncio.shield(request.config['db'].execute("UPDATE ..."))
+    return web.Response(text="OK")
+	    </code></pre>
+	    <ul class="fragment">
+	      <li>aiojobs</li>
+	      <li>armor</li>
+	    </ul>
+	  </section>
+	  <section>
+	    <h2>No futures</h2>
+	    <ul>
+	      <li>Future is for library writers</li>
+	      <li>Writing error-less code is hard</li>
+	      <li>asyncio had bugs in locks and queues</li>
+	      <li>aiohttp had bugs in connection pools</li>
+	    </ul>
+	  </section>
+	</section>
+	<section>
+	  <section>
+	    <h1>Modern asyncio</h1>
+	    <img src="modern.jpg" width="60%"/>
+	  </section>
+	  <section>
+	    <h1>async/await everywhere</h1>
+	    <img src="firework.jpeg" width="60%"/>
+	  </section>
+	  <section>
+	    <h2>Context variables</h2>
+	    <pre><code>
+import contextvars
+var = contextvars.ContextVar('var', 'default')
+
+async def inner():
+    log.debug("User name: %s", var.get())
+
+@routes.get('/{name}')
+async def handler(request):
+    assert var.get() == 'default'
+    var.set(request.match_info['name'])
+    await inner()
+    ...
+	    </code></pre>
+	  </section>
+	  <section>
+	    <h2>Context var usage</h2>
+	  </section>
+	  <section>
+	    <h2>Top-level functions</h2>
+	    <ul>
+	      <li>run()</li>
+	      <li>create_task()</li>
+	      <li>current_task()</li>
+	      <li>all_tasks()</li>
+	      <li>get_running_loop()</li>
+	    </ul>
+	  </section>
+	  <section>
+	    <h2>New features</h2>
+	    <ul>
+	      <li>SSL upgrade: loop.start_tls()</li>
+	      <li>Sendfile support: loop.sendfile()</li>
+	      <li>server.serve_forever()</li>
+	    </ul>
+	  </section>
+	</section>
+	<section>
+	  <section>
+	    <h1>asyncio future plans</h1>
+	    <img src="future.jpg" width="60%" />
+	  </section>
+	  <section>
+	    <h2>Hidden hard work</h2>
+	    <ul>
+	      <li>TLS reimplementation</li>
+	      <li>Alternative TCP stream</li>
+	    </ul>
+	  </section>
+	  <section>
+	    <h2>Task groups</h2>
+	    <pre><code>
+async with TaskGroup() as tg:
+    tg.create_task(task_1())
+    tg.create_task(task_2())
+    tg.call_later(5.0, callback)
+	    </code></pre>
+	  </section>
 	</section>
         <!-- ------------------------------------------ -->
         <section>
@@ -126,7 +348,7 @@ asyncio.run(main())
           <p>
             <small>@andrew_svetlov</small><br>
             <small>andrew.svetlov@gmail.com</small><br>
-            <small>http://asvetlov.github.io/pycon-minsk-2018/</small>
+            <small>http://asvetlov.github.io/ua-pycon-2018/</small>
           </p>
         </section>
       </div>
