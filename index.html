@@ -62,6 +62,8 @@
 	    <h2>Why?</h2>
 	    <p class="fragment">Microservices</p>
 	    <p class="fragment">Websockets</p>
+	    <p class="fragment">Non-HTTP transports</p>
+	    <p class="fragment">Long-running tasks</p>
 	  </section>
 	  <section>
 	    <h2>Basic API</h2>
@@ -115,7 +117,17 @@ asyncio.run(main())
 	    </code></pre>
 	  </section>
 	  <section>
-	    <h2>No run_forever() / run_until_complete()</h2>
+	    <h2>Ugly</h2>
+	    <pre><code>
+async def f():
+    ...
+
+loop.create_task(f)
+loop.run_forever()
+	    </code></pre>
+	  </section>
+	  <section>
+	    <h2>Don't invite a wheel</h2>
 	    <pre><small><small><code>
 def run(main, *, debug=False):
     if events._get_running_loop() is not None:
