@@ -122,12 +122,12 @@ asyncio.run(main())
 async def f():
     ...
 
-loop.create_task(f)
+loop.create_task(f())
 loop.run_forever()
 	    </code></pre>
 	  </section>
 	  <section>
-	    <h2>Don't invite a wheel</h2>
+	    <h2>Don't invent a wheel</h2>
 	    <pre><small><small><code>
 def run(main, *, debug=False):
     if events._get_running_loop() is not None:
@@ -221,7 +221,7 @@ class A:
     @classmethod
     async def create(cls):
         self = cls()
-        self.data = fetch(url)
+        self.data = await fetch(url)
 
 a = await A.create()
 	    </code></pre>
