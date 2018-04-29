@@ -178,9 +178,7 @@ def _cancel_all_tasks(loop):
 	<section>
 	  <section>
 	    <h1>Common mistakes</h1>
-	  </section>
-	  <section>
-	    <img src="explosion.png" width="100%" />
+	    <img src="explosion.png" width="60%" />
 	  </section>
 	</section>
 	<section>
@@ -249,6 +247,14 @@ async def fetch(db):
 	      <li><code>async with obj: ...</code></li>
 	    </ul>
 	  </section>
+	  <section>
+	    <h2>Timeouts</h2>
+	    <ul>
+	      <li>Read</li>
+	      <li>Write</li>
+	      <li>Close</li>
+	    </ul>
+	  </section>
 	</section>
 	<section>
 	  <section>
@@ -309,6 +315,10 @@ async def handler(request):
 	  </section>
 	  <section>
 	    <h2>Context var usage</h2>
+	    <ul>
+	      <li>Logging and tracing</li>
+	      <li><del>DB and request storage</del></li>
+	    </ul>
 	  </section>
 	  <section>
 	    <h2>Top-level functions</h2>
